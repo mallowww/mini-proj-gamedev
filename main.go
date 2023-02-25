@@ -1,84 +1,128 @@
 package main
 
 import (
-    "image"
-    "log"
-    "os"
+	"fmt"
+	"image"
+	"log"
+	"os"
 
-    "github.com/hajimehoshi/ebiten/v2"
-    "github.com/hajimehoshi/ebiten/v2/ebitenutil"
-    "golang.org/x/image/draw"
+	"github.com/hajimehoshi/ebiten/v2"
+	"github.com/hajimehoshi/ebiten/v2/ebitenutil"
+	"golang.org/x/image/draw"
+	"golang.org/x/image/font"
 )
 
 const (
-    screenWidth  = 800
-    screenHeight = 600
+	screenWidth  = 800
+	screenHeight = 600
 )
 
 type GameState int
 
 const (
-    MenuState GameState = iota
-    PlayState
+	MenuState GameState = iota
+	PlayState
+)
+
+type MenuOption int
+
+const (
+	StartOption MenuOption = iota
+	SettingsOption
+	QuitOption
 )
 
 type Game struct {
-    state GameState
+	state    GameState
+	menuSel  MenuOption
+	menuFont *ebiten.Font
 }
 
 func (g *Game) Update() error {
-    // update the game state based on user input or other events
-    switch g.state {
-    case MenuState:
-        // update the menu state
-    case PlayState:
-        // update the play state
-    }
+	switch g.state {
+	case MenuState:
+		if ebiten.IsKeyPressed(ebiten.KeyDown) {
+			g.menuSel++
+			if g.menuSel > QuitOption {
+				g.menuSel = StartOption
+			}
+		} else if ebiten.IsKeyPressed(ebiten.KeyUp) {
+			g.menuSel--
+			if g.menuSel < StartOption {
+				g.menuSel = QuitOption
+			}
+		}
 
-    return nil
+		if ebiten.IsKeyPressed(ebiten.KeyEnter) {
+			switch g.menuSel {
+			case StartOption:
+				g.state = PlayState
+			case SettingsOption:
+				// TODO; but not right now btw 55555
+			case QuitOption:
+				return fmt.Errorf("user quit")
+			}
+		}
+	case PlayState:
+		// TODO
+	}
+
+	return nil
 }
 
 func (g *Game) Draw(screen *ebiten.Image) {
-    switch g.state {
-    case MenuState:
-        ebitenutil.DebugPrint(screen, "Menu")
-    case PlayState:
-        ebitenutil.DebugPrint(screen, "Play")
-    }
+	switch g.state {
+	case MenuState:
+		msg := "Menu\n\n"
+		if g.menuSel == StartOption {
+			msg += "[START]  Settings  Quit"
+		} else if g.menuSel == SettingsOption {
+			msg += "Start  [SETTINGS]  Quit"
+		} else {
+			msg += "Start  Settings  [QUIT]"
+		}
+
+		ebitenutil.DebugPrint(screen, msg)
+	case PlayState:
+		ebitenutil.DebugPrint(screen, "Play")
+	}
 }
 
 func (g *Game) Layout(outsideWidth, outsideHeight int) (screenWidth, screenHeight int) {
-	// return screenWidth, screenHeight
-    return 800, 600
+	return screenWidth, screenHeight
 }
 
 func main() {
-    iconFile, err := os.Open("assets/img/title-icon.png")
-    if err != nil {
-        log.Fatal(err)
-    }
-    defer iconFile.Close()
+	iconFile, err := os.Open("assets/img/title-icon.png")
+	if err != nil {
+		log.Fatal(err)
+	}
+	defer iconFile.Close()
 
-    iconImg, _, err := image.Decode(iconFile)
-    if err != nil {
-        log.Fatal(err)
-    }
+	iconImg, _, err := image.Decode(iconFile)
+	if err != nil {
+		log.Fatal(err)
+	}
 
-    // resize title icon config
-    const iconSize = 128
-    resizedImg := image.NewRGBA(image.Rect(0, 0, iconSize, iconSize))
-    draw.NearestNeighbor.Scale(resizedImg, resizedImg.Bounds(), iconImg, iconImg.Bounds(), draw.Over, nil)
+	// resize title icon config
+	const iconSize = 128
+	resizedImg := image.NewRGBA(image.Rect(0, 0, iconSize, iconSize))
+	draw.NearestNeighbor.Scale(resizedImg, resizedImg.Bounds(), iconImg, iconImg.Bounds(), draw.Over, nil)
 
-    ebiten.SetWindowSize(screenWidth, screenHeight)
-    ebiten.SetWindowTitle("Game Title")
-    ebiten.SetWindowIcon([]image.Image{resizedImg}) // Set the icon image
+	ebiten.SetWindowSize(screenWidth, screenHeight)
+	ebiten.SetWindowTitle("Game Title")
+	ebiten.SetWindowIcon([]image.Image{resizedImg}) // Set the icon image
 
-    // initialize the game state
-    game := &Game{
-        state: MenuState,
-    }
+	// initialize the game state
+	game := &Game{
+		state:    MenuState,
+		menuSel:  StartOption,
+		menuFont: ebiten.Font{},
+	}
 
-    if err := ebiten.RunGame(game); err != nil {
-        log.Fatal(err)
-    }
+	if err := ebiten.RunGame(game); err != nil {
+		if err.Error() == "user quit" {
+			fmt.Println("Goodbye!")
+		}
+	}
 }
