@@ -3,13 +3,16 @@ package main
 import (
 	"fmt"
 	"image"
+	"io"
 	"log"
 	"os"
 
 	"github.com/hajimehoshi/ebiten/v2"
 	"github.com/hajimehoshi/ebiten/v2/ebitenutil"
+	_ "github.com/hajimehoshi/ebiten/v2/text"
 	"golang.org/x/image/draw"
 	"golang.org/x/image/font"
+	_ "github.com/golang/freetype/truetype"
 )
 
 const (
@@ -33,9 +36,10 @@ const (
 )
 
 type Game struct {
-	state    GameState
-	menuSel  MenuOption
-	menuFont *ebiten.Font
+	state   GameState
+	menuSel MenuOption
+	// menuFont *ebiten.Font
+	menuFont font.Face
 }
 
 func (g *Game) Update() error {
@@ -104,6 +108,54 @@ func main() {
 		log.Fatal(err)
 	}
 
+	// font initialize
+	
+	// fontFile, err := os.Open("path/to/font.ttf")
+	// if err != nil {
+	// 	log.Fatal(err)
+	// }
+	// defer fontFile.Close()
+
+	// fontBytes, err := io.ReadAll(fontFile)
+	// if err != nil {
+	// 	log.Fatal(err)
+	// }
+
+	// font, err := truetype.Parse(fontBytes)
+	// if err != nil {
+	// 	log.Fatal(err)
+	// }
+
+	// menuFont, err := ebitenutil.NewFont(fontBytes, 12)
+	// if err != nil {
+	// 	log.Fatal(err)
+	// }
+
+	fontFile, err := os.Open("path/to/font.ttf")
+	if err != nil {
+		log.Fatal(err)
+	}
+	defer fontFile.Close()
+
+	fontBytes, err := io.ReadAll(fontFile)
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	font, err := freetype.ParseFont(fontBytes)
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	menuFont, err := freetype.NewContext().NewFace(font, &freetype.Options{
+		Size:    12,
+		DPI:     72,
+		Hinting: font.Hinting,
+	})
+	if err != nil {
+		log.Fatal(err)
+	}
+
 	// resize title icon config
 	const iconSize = 128
 	resizedImg := image.NewRGBA(image.Rect(0, 0, iconSize, iconSize))
@@ -117,7 +169,7 @@ func main() {
 	game := &Game{
 		state:    MenuState,
 		menuSel:  StartOption,
-		menuFont: ebiten.Font{},
+		menuFont: menuFont,
 	}
 
 	if err := ebiten.RunGame(game); err != nil {
@@ -125,4 +177,5 @@ func main() {
 			fmt.Println("Goodbye!")
 		}
 	}
+
 }
