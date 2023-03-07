@@ -1,0 +1,9 @@
+# docker compose version
+# well I thought it was 3.8 too... thanks, this forum help me out https://forums.docker.com/t/docker-compose-version-3-8-or-3-9-for-latest/102439
+version: '3.9'
+
+services:
+  main:
+    build: .
+    volumes:
+      - "2566:8080"
