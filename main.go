@@ -13,8 +13,10 @@ import (
 
 type Game struct {
 	bgImg *ebiten.Image
-	img   *ebiten.Image
 	once  sync.Once
+
+	owlImg         *ebiten.Image
+	owlPosition ebiten.GeoM
 }
 
 func (g *Game) Update() error {
@@ -27,11 +29,16 @@ func (g *Game) Update() error {
 		g.bgImg = bgImg
 
 		characterImage := "./assets/img/cutey-owl.png"
-		img, _, err := ebitenutil.NewImageFromFile(characterImage)
+		owlImg, _, err := ebitenutil.NewImageFromFile(characterImage)
 		if err != nil {
 			log.Fatal(err)
 		}
-		g.img = img
+		g.owlImg = owlImg
+
+		// init owl postion, center of the screen
+		screenWidth, screenHeight := ebiten.WindowSize()
+		owlWidth, owlHeight := owlImg.Size()
+		g.owlPosition.Translate(float64(screenWidth-owlWidth)/2, float64(screenHeight-owlHeight)/2)
 	})
 	return nil
 }
@@ -41,7 +48,7 @@ func (g *Game) Draw(screen *ebiten.Image) {
 	op := ebiten.DrawImageOptions{}
 	op.GeoM.Scale(.3, .3)
 	op.GeoM.Translate(300, 300)
-	screen.DrawImage(g.img, &op)
+	screen.DrawImage(g.owlImg, &op)
 }
 
 func (g *Game) Layout(width, height int) (int, int) {
@@ -49,7 +56,8 @@ func (g *Game) Layout(width, height int) (int, int) {
 }
 
 func main() {
-	ebiten.SetWindowTitle("กลายเป็น flappybird game type ไปซะเอง (55555555)")
+	windowTitle := "กลายเป็น flappybird game type ไปซะเอง (55555555)"
+	ebiten.SetWindowTitle(windowTitle)
 
 	titleIcon := "./assets/img/title-icon.png"
 	iconImage, _, err := ebitenutil.NewImageFromFile(titleIcon)
