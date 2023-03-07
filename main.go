@@ -41,10 +41,13 @@ func (g *Game) Update() error {
 		g.owlPosition.Translate(float64(screenWidth-owlWidth)/2, float64(screenHeight-owlHeight)/2)
 	})
 
-	// left mouse pressed (m1 for jump)
+	// movements
 	if ebiten.IsMouseButtonPressed(ebiten.MouseButtonLeft) {
 		g.owlPosition.Translate(0, -10)
+	} else {
+		g.owlPosition.Translate(0, 5)
 	}
+	g.owlPosition.Translate(3, 0)
 
 	return nil
 }
