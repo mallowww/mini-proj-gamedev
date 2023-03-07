@@ -12,12 +12,20 @@ import (
 )
 
 type Game struct {
-	img  *ebiten.Image
-	once sync.Once
+	bgImg *ebiten.Image
+	img   *ebiten.Image
+	once  sync.Once
 }
 
 func (g *Game) Update() error {
 	g.once.Do(func() {
+		backgroundImage := "./assets/img/example-background.png"
+		bgImg, _, err := ebitenutil.NewImageFromFile(backgroundImage)
+		if err != nil {
+			log.Fatal(err)
+		}
+		g.bgImg = bgImg
+
 		characterImage := "./assets/img/cutey-owl.png"
 		img, _, err := ebitenutil.NewImageFromFile(characterImage)
 		if err != nil {
@@ -29,6 +37,7 @@ func (g *Game) Update() error {
 }
 
 func (g *Game) Draw(screen *ebiten.Image) {
+	screen.DrawImage(g.bgImg, nil)
 	op := ebiten.DrawImageOptions{}
 	op.GeoM.Scale(.3, .3)
 	op.GeoM.Translate(300, 300)
