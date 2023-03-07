@@ -15,7 +15,7 @@ type Game struct {
 	bgImg *ebiten.Image
 	once  sync.Once
 
-	owlImg         *ebiten.Image
+	owlImg      *ebiten.Image
 	owlPosition ebiten.GeoM
 }
 
@@ -40,12 +40,19 @@ func (g *Game) Update() error {
 		owlWidth, owlHeight := owlImg.Size()
 		g.owlPosition.Translate(float64(screenWidth-owlWidth)/2, float64(screenHeight-owlHeight)/2)
 	})
+
+	// left mouse pressed (m1 for jump)
+	if ebiten.IsMouseButtonPressed(ebiten.MouseButtonLeft) {
+		g.owlPosition.Translate(0, -10)
+	}
+
 	return nil
 }
 
 func (g *Game) Draw(screen *ebiten.Image) {
 	screen.DrawImage(g.bgImg, nil)
 	op := ebiten.DrawImageOptions{}
+	op.GeoM = g.owlPosition
 	op.GeoM.Scale(.3, .3)
 	op.GeoM.Translate(300, 300)
 	screen.DrawImage(g.owlImg, &op)
