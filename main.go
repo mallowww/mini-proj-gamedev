@@ -12,11 +12,14 @@ import (
 )
 
 type Game struct {
-	bgImg *ebiten.Image
-	once  sync.Once
+	once sync.Once
 
 	owlImg      *ebiten.Image
 	owlPosition ebiten.GeoM
+
+	bgImg      *ebiten.Image
+	bgPosition ebiten.GeoM
+	bgSpeed    float64
 }
 
 func (g *Game) Update() error {
@@ -35,10 +38,17 @@ func (g *Game) Update() error {
 		}
 		g.owlImg = owlImg
 
+		// thought: plan to remove the comments below after try something that works better then "must calculate the screen lines first to do it"
 		// init owl postion, center of the screen
-		screenWidth, screenHeight := ebiten.WindowSize()
-		owlWidth, owlHeight := owlImg.Size()
-		g.owlPosition.Translate(float64(screenWidth-owlWidth)/2, float64(screenHeight-owlHeight)/2)
+		_, screenHeight := ebiten.WindowSize()
+		// screenWidth, screenHeight := ebiten.WindowSize()
+		// owlWidth, owlHeight := owlImg.Size()
+		// g.owlPosition.Translate(float64(screenWidth-owlWidth)/2, float64(screenHeight-owlHeight)/2)
+
+		// init background position and speed
+		bgWidth, _ := bgImg.Size()
+		g.bgPosition.Translate(0, float64(screenHeight-bgWidth))
+		g.bgSpeed = 3
 	})
 
 	// movements
@@ -49,16 +59,51 @@ func (g *Game) Update() error {
 	}
 	g.owlPosition.Translate(3, 0)
 
+	// background moving position
+	g.bgPosition.Translate(-g.bgSpeed, 0)
+	bgWidth, _ := g.bgImg.Size()
+	if g.bgPosition.Element(0, 0) <= -float64(bgWidth) {
+		g.bgPosition.Translate(2*float64(bgWidth), 0)
+	}
+
 	return nil
 }
 
 func (g *Game) Draw(screen *ebiten.Image) {
-	screen.DrawImage(g.bgImg, nil)
-	op := ebiten.DrawImageOptions{}
-	op.GeoM = g.owlPosition
+	screenWidth, screenHeight := ebiten.WindowSize()
+
+	// Draw the background image
+	op := &ebiten.DrawImageOptions{}
+	op.GeoM.Translate(g.bgPosition.Element(0, 2), 0)
+	screen.DrawImage(g.bgImg, op)
+
+	// I will use the other pictures later but for now, let's settle it with the same image
+	// Draw the second background image immediately after the first instance ends
+	op = &ebiten.DrawImageOptions{}
+	op.GeoM.Translate(g.bgPosition.Element(0, 2)+float64(g.bgImg.Bounds().Dx()), 0)
+	screen.DrawImage(g.bgImg, op)
+
+	// Draw the third background image
+	op = &ebiten.DrawImageOptions{}
+	op.GeoM.Translate(g.bgPosition.Element(0, 2)+2*float64(g.bgImg.Bounds().Dx()), 0)
+	screen.DrawImage(g.bgImg, op)
+
+	// Draw the owl image
+	owlWidth, owlHeight := g.owlImg.Size()
+	op = &ebiten.DrawImageOptions{}
+	op.GeoM.Translate(float64(screenWidth-owlWidth)/2, float64(screenHeight-owlHeight)/2)
+	// Init owl postion
+	op.GeoM.Translate(g.owlPosition.Element(0, 2), g.owlPosition.Element(1, 2)) 
 	op.GeoM.Scale(.3, .3)
-	op.GeoM.Translate(300, 300)
-	screen.DrawImage(g.owlImg, &op)
+	screen.DrawImage(g.owlImg, op)
+
+	// Update the background position
+	g.bgPosition.Translate(-g.bgSpeed, 0)
+	bgWidth := g.bgImg.Bounds().Dx()
+	if g.bgPosition.Element(0, 2) <= -2*float64(bgWidth) {
+		g.bgPosition.Translate(2*float64(bgWidth), 0)
+	}
+
 }
 
 func (g *Game) Layout(width, height int) (int, int) {
